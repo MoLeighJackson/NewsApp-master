@@ -1,9 +1,13 @@
 package com.example.moleigh.newsapp;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -23,7 +27,6 @@ public class StoryActivity extends AppCompatActivity {
 
     private String TAG = StoryActivity.class.getSimpleName();
     private ListView list_view;
-
     ArrayList<HashMap<String, String>> storyList;
 
     @Override
@@ -43,7 +46,7 @@ public class StoryActivity extends AppCompatActivity {
         protected Void doInBackground(Void... arg0) {
             HttpHandler sh = new HttpHandler();
             // TODO: make a request to the URL
-            String url = "https://content.guardianapis.com/search?q=agriculture&from-date=2018-09-01&to-date=2018-09-06&api-key=727920b2-be9a-4727-841d-133401cf04ad";
+            String url = "https://content.guardianapis.com/search?q=agriculture&from-date=2018-09-01&to-date=2018-09-06&show-tags=contributor&api-key=727920b2-be9a-4727-841d-133401cf04ad";
             String jsonString = "";
             try {
                 jsonString = sh.makeHttpRequest(createUrl(url));
@@ -63,19 +66,31 @@ public class StoryActivity extends AppCompatActivity {
                     // looping through all Contacts
                     for (int i = 0; i < stories.length(); i++) {
                         //TODO: get the JSONObject
-                        JSONObject c = stories.getJSONObject(i);
-                        String title = c.getString("webTitle");
-                        String section = c.getString("sectionName");
+                        JSONObject content = stories.getJSONObject(i);
+                        String title = content.getString("webTitle");
+                        String section = content.getString("sectionName");
+                        String date = content.getString("webPublicationDate");
+                        String id = content.getString("id");
+                        String author;
 
 
-                        // tmp hash map for a single pokemon
+                        if(title.contains("|")) {
+                            author = content.getString("webTitle");
+
+                        } else {
+                            author = "No Author Listed";
+                        }
+
+                        // tmp hash map for a single story
                         HashMap<String, String> story = new HashMap<>();
 
-                        // add each child node to HashMap key => valu
-                        // e
+                        // add each child node to HashMap key => value
+                        //Title is the full title including the author info
                         story.put("title", title);
                         story.put("section", section);
-                        // adding a pokemon to our pokemon list
+                        story.put("author", author);
+                        story.put("date", date);
+                        // adding a story to our story list
                         storyList.add(story);
                     }
                 } catch (final JSONException e) {
@@ -116,12 +131,13 @@ public class StoryActivity extends AppCompatActivity {
             return url;
         }
 
+
         @Override
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
-            ListAdapter adapter = new SimpleAdapter(StoryActivity.this, storyList,
-                    R.layout.list_item, new String[]{"title", "section"},
-                    new int[]{R.id.title, R.id.section});
+            final ListAdapter adapter = new SimpleAdapter(StoryActivity.this, storyList,
+                    R.layout.list_item, new String[]{"title", "section", "author", "date"},
+                    new int[]{R.id.title, R.id.section, R.id.author, R.id.date});
             list_view.setAdapter(adapter);
         }
     }
